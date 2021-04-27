@@ -43,6 +43,18 @@ async function testIdent() {
   group = await ident.getGroup(contractAddr, addr, groupIndex)
   assert.equal(group.parts.length, 2)
 
+  // add an existing participant - JBG
+  part = {
+    name: `Participant ${new Date().getTime()}`,
+    password: process.env.GETH_PASSWORD, 
+    addr: process.env.GETH_COINBASE 
+  }
+  await ident.addParticipant(contractAddr, groupIndex, part)
+
+  // Get group, again - JBG
+  group = await ident.getGroup(contractAddr, addr, groupIndex)
+  assert.equal(group.parts.length, 3)
+
 }
 
 async function testWingine() {

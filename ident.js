@@ -89,6 +89,7 @@ module.exports = {
   abi,
   addGroup,
   bin,
+  addParticipant,
   createParticipant,
   getGroup,
   getGroupCount,
