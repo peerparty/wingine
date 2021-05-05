@@ -2,6 +2,10 @@ const Web3 = require('web3')
 
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.WEB3_HTTP_PROVIDER))
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function deploy(abi, bin, args = null) {
   console.log(`DEPLOYING contract w/ args ${args}`)
   try {
@@ -33,32 +37,45 @@ function getContract(abi, contractAddr) {
   return new web3.eth.Contract(abi, contractAddr)
 }
 
-async function exec(addr, pass, contractAddr, call) {
+async function createTxn(addr, pass, contractAddr, call) {
   await web3.eth.personal.unlockAccount(addr, pass)
   let nonce = await web3.eth.getTransactionCount(addr)
   let encodedABI = call.encodeABI()
   let gas = await call.estimateGas({ from: addr })
   let gasPrice = await web3.eth.getGasPrice()
-  console.log('GAS', gas, gasPrice)
   let obj = {
     from: addr,
     to: contractAddr,
-    gas: gas,
+    gas: gas * 10,
     gasPrice: gasPrice,
     data: encodedABI,
     nonce: nonce,
     value: ""
   }
   let res = await web3.eth.signTransaction(obj, addr)
+  return res
+}
+
+async function exec(addr, pass, contractAddr, call) {
+  let res = await createTxn(addr, pass, contractAddr, call) 
   let txn = await web3.eth.sendSignedTransaction(res.raw || res.rawTransaction)
   console.log(`Completed txn: ${txn.transactionHash}`)
   return txn.transactionHash
 }
 
+async function batch(txns) {
+  let batch = new web3.BatchRequest();
+  txns.forEach(t => batch.add(t))
+  await batch.execute();
+}
+
 module.exports = {
-  getContract,
+  batch,
+  createTxn,
   deploy,
   exec,
+  getContract,
+  sleep, 
   web3,
 }
 
